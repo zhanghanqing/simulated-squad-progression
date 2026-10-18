@@ -3,10 +3,10 @@ import type { PlayerMatchStats } from "./types";
 /**
  * How much each fact in a match is worth.
  *
- * Why teamwork weighs more than kills: Squad is won by squads, not by
- * individual frag counts, and the China edition explicitly rewards
- * logistics, support and command roles. A medic who revives 10 players
- * (500 XP) out-earns a rifleman with 10 kills (200 XP).
+ * Why teamwork weighs more than kills: in a Squad-like game, matches are
+ * won by squads working together, not by individual frag counts. A medic
+ * who revives 10 players (500 XP) out-earns a rifleman with 10 kills
+ * (200 XP). These numbers are invented for this simulation.
  *
  * Why caps: `maxMinutes` stops AFK-farming in endless matches, and
  * `maxPerMatch` limits the damage of any bug or exploit in one match.

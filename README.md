@@ -1,13 +1,17 @@
-# Squad Progression: XP and Level Settlement
+# Simulated Squad: XP and Level Settlement
 
 > When a 50v50 match ends, every player gets the XP they earned, exactly
 > once, and moves up the right number of levels, even when the dedicated
 > server retries its report or two writes race.
 
-This demo is the smallest useful slice of the **progression system**
-(军旅之路) that *Squad*'s China edition adds on top of the global game:
-**XP and levels**. It implements the core algorithms and defines
-everything else as interfaces, with diagrams.
+This is a **simulation**: an XP and level system for a *Squad*-like 50v50
+game, written to show how such a backend is built. It implements the core
+algorithms and defines everything else as interfaces, with diagrams.
+
+**It does not describe the real game.** It is not affiliated with Offworld
+Industries or Tencent. Every rule, curve and number here is invented. What
+is publicly known about the real game, and how carefully it was checked,
+is in [section 1](#1-background).
 
 ---
 
@@ -32,18 +36,55 @@ everything else as interfaces, with diagrams.
 
 ## 1. Background
 
-The global *Squad* has almost no long-term progression. Media coverage of
-the China edition (*战术小队：破晓攻势*, developed with Offworld
-Industries and published by Tencent) describes a new progression path
-called **军旅之路** ("military career"), introduced because the original
-had "no growth, no goals, no honours" (无成长、无目标、无荣誉). Alongside it
-come 39 medal types, ranked play, clans with a seasonal ladder, and a
-mentor system.
+### What is publicly known
 
-All of them start from the same moment: **a match ends and the dedicated
-server reports what each of up to 100 players did.** XP and levels are the
-simplest of these systems and the foundation for the rest, so this demo
-does only that:
+*Squad*'s China edition is called *战术小队：破晓攻势*. When this was
+written (**2026-10-18**), no launch announcement was found; everything
+below comes from its announcement, a media preview held before launch, and
+the global game's official notes. Each claim lists **how solid it is**:
+
+- **Official**: stated by the developer or publisher, or a public record.
+- **Seen in preview**: a journalist played a preview build and reported it.
+- **Reported**: written by a journalist without saying they saw it.
+- **Planned**: presented as a plan or as provisional.
+
+**China edition**
+
+| Claim | How solid | Source |
+|---|---|---|
+| Developed by Offworld Industries (世外工作室), published by Tencent; import licence granted 2025-06-23 | Official (public licence record, as listed by Baidu Baike) | [Baidu Baike](https://baike.baidu.com/item/%E6%88%98%E6%9C%AF%E5%B0%8F%E9%98%9F%EF%BC%9A%E7%A0%B4%E6%99%93%E6%94%BB%E5%8A%BF/65814456), [Chuapp](https://www.chuapp.com/article/291383.html) |
+| First shown at Tencent's showcase on 2026-05-27, with pre-registration and test sign-ups | Official (the event), as reported | [Chuapp](https://www.chuapp.com/article/291383.html) |
+| Adds a progression system (成长系统), ranked play (排位系统), a career system (生涯系统) and achievements/medals (成就勋章系统) | Seen in preview | [游戏日报, 2026-05-28](https://www.sohu.com/a/1028663636_118576) |
+| Tiered team-kill warnings, and a report system for victims of deliberate team kills | Seen in preview | [游戏日报, 2026-05-28](https://www.sohu.com/a/1028663636_118576) |
+| 39 types of medals, including honours for logistics, support and command | Reported (two outlets) | [游研社, 2026-05-29](https://m.sohu.com/a/1029470443_628730/), [17173, 2026-05-30](https://news.17173.com/content/05302026/152503790.shtml) |
+| Official matchmaking servers; free-to-play live service instead of a one-time purchase | Reported | [游研社, 2026-05-29](https://m.sohu.com/a/1029470443_628730/) |
+| **军旅之路**: a community "veterans teach newcomers" path with three tracks (mentor, squad officer, academy professor) and cosmetic honours | Planned ("暂时", provisional, per the producer) | [Chuapp](https://www.chuapp.com/article/291383.html), [游研社](https://m.sohu.com/a/1029470443_628730/) |
+| Mentor and newcomer rate each other after teaching matches; a seasonal clan league; linking the account to Steam playtime | Planned | [游研社, 2026-05-29](https://m.sohu.com/a/1029470443_628730/) |
+
+**Global edition**
+
+| Claim | How solid | Source |
+|---|---|---|
+| "We have no plans at this time for a traditional progression system", but a socially driven one is planned | Official, March 2024 | [Squad developer Q&A](https://www.joinsquad.com/updates/squad-developer-q-a---march-2024) |
+| **Commendation System** (update 9.0, 2025-09-04): players award up to two commendations per round on licensed servers; ranks per role and for Leadership, Teacher and Teamwork; a Career screen | Official | [Squad 9.0 release notes](https://www.joinsquad.com/updates/squad-9-0-release-notes) |
+| Games are found in a server browser of licensed and community servers | Community wiki | [Squad Wiki: Server browser](https://squad.fandom.com/wiki/Server_browser) |
+
+### What this means for this demo
+
+- The global game **does** have a form of progression: commendation ranks
+  given by other players. So this demo does **not** claim that the global
+  game has no progression.
+- What public sources do not show for the global game is **XP earned from
+  match performance that raises a level**. The China edition's preview
+  build was reported to have a progression system, but **how it works (XP
+  sources, curve, levels) is not public.**
+- 军旅之路 is a community mentoring path, not an XP system. This demo is
+  not a model of it.
+
+So this demo simulates the most common form such a system takes, XP from
+match results and levels from XP, because it starts from the moment every
+long-term system needs: **a match ends and the dedicated server reports
+what each of up to 100 players did.** It does only that:
 
 - a player has **total XP** and a **level**;
 - each match adds XP, computed by rules;
@@ -184,9 +225,10 @@ cannot invent XP.
 | Team kill | −100 |
 | **Per match** | between 0 and 5,000 |
 
-**Teamwork is worth more than kills.** Squad is won by squads, and the
-China edition explicitly rewards logistics, support and command. Four
-players in the same 60-minute match:
+**Teamwork is worth more than kills.** In a *Squad*-like game, matches are
+won by squads working together, not by individual kill counts. (Coverage
+of the China edition also reports medals for logistics, support and
+command roles; see section 1.) Four players in the same 60-minute match:
 
 | Player | Did | XP |
 |---|---|---|
@@ -529,9 +571,13 @@ transaction) → `sql/schema.sql`.
 
 **Assumptions:**
 
-- The China edition's progression is described only in media coverage
-  before launch. This demo's curve, rules and numbers are **its own**, not
-  the game's.
+- This is a simulation. The curve, the XP rules and every number are
+  **invented**. The real game's progression mechanics are not public, and
+  no launch announcement for the China edition was found when this was
+  written (2026-10-18).
+- Most China-edition sources are media coverage of a pre-launch preview.
+  Some of it reads as promotional; section 1 marks each claim by how solid
+  it is. Systems may change before or after launch.
 - How the DS calls backend services on InGame, how clients are pushed
   messages, and whether BattlePass/Statistics accept our events are not
   publicly documented.
@@ -555,7 +601,19 @@ transaction) → `sql/schema.sql`.
 
 ## 14. Sources
 
-- [17173: China edition systems overview](https://news.17173.com/content/05302026/152503790.shtml)
-- [Sohu: China edition first look](https://www.sohu.com/a/1028663636_118576)
-- [Sohu: how the China edition changes Squad](https://m.sohu.com/a/1029470443_628730/)
+All checked on 2026-10-18.
+
+**Global edition (official)**
+
+- [Squad developer Q&A, March 2024](https://www.joinsquad.com/updates/squad-developer-q-a---march-2024): no traditional progression planned; a social one planned
+- [Squad 9.0 release notes, 2025-09-04](https://www.joinsquad.com/updates/squad-9-0-release-notes): the Commendation System
+- [Squad Wiki: Server browser](https://squad.fandom.com/wiki/Server_browser) (community wiki)
+
+**China edition (media, pre-launch)**
+
+- [Chuapp, 2026-05-27](https://www.chuapp.com/article/291383.html): showcase, preview build, the producer on 军旅之路
+- [游戏日报 via Sohu, 2026-05-28](https://www.sohu.com/a/1028663636_118576): hands-on preview; progression, ranked, career, medals, team-kill warnings and reports
+- [游研社 via Sohu, 2026-05-29](https://m.sohu.com/a/1029470443_628730/): 39 medals, matchmaking, free-to-play, plans for 军旅之路
+- [17173, 2026-05-30](https://news.17173.com/content/05302026/152503790.shtml): 39 medal types (from a WeChat account, promotional in tone)
+- [Baidu Baike](https://baike.baidu.com/item/%E6%88%98%E6%9C%AF%E5%B0%8F%E9%98%9F%EF%BC%9A%E7%A0%B4%E6%99%93%E6%94%BB%E5%8A%BF/65814456): developer, publisher, licence date
 - [Official site](https://sigua.qq.com/)
